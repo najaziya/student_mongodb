@@ -1,195 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NodeLab - Login & Signup</title>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f2f2f2;
-            margin: 0;
-            padding: 40px;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: auto;
-            display: flex;
-            gap: 30px;
-        }
-
-        .box {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
-            flex: 1;
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        h2 {
-            text-align: center;
-        }
-
-        input {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0 15px;
-            box-sizing: border-box;
-        }
-
-        button {
-            width: 100%;
-            padding: 11px;
-            background: #333;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-
-        button:hover {
-            background: #555;
-        }
-
-        #signupMessage,
-        #loginMessage {
-            margin-top: 15px;
-            text-align: center;
-        }
-
-        @media (max-width: 700px) {
-            .container {
-                flex-direction: column;
-            }
-        }
-    </style>
+    <title>User Login</title>
 </head>
-
 <body>
 
-    <h1>Node.js User Authentication</h1>
+    <h1>User Signup and Login</h1>
 
-    <div class="container">
+    <h2>Sign Up</h2>
 
-        <!-- SIGN UP -->
-        <div class="box">
-            <h2>Sign Up</h2>
+    <form action="/signup" method="POST">
+        <input type="text" name="name" placeholder="Name" required>
+        <br><br>
 
-            <form id="signupForm">
+        <input type="email" name="email" placeholder="Email" required>
+        <br><br>
 
-                <label>Name</label>
-                <input type="text" id="signupName" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <br><br>
 
-                <label>Email</label>
-                <input type="email" id="signupEmail" required>
+        <button type="submit">Sign Up</button>
+    </form>
 
-                <label>Password</label>
-                <input type="password" id="signupPassword" required>
+    <hr>
 
-                <button type="submit">Sign Up</button>
+    <h2>Login</h2>
 
-            </form>
+    <form action="/login" method="POST">
+        <input type="email" name="email" placeholder="Email" required>
+        <br><br>
 
-            <p id="signupMessage"></p>
-        </div>
+        <input type="password" name="password" placeholder="Password" required>
+        <br><br>
 
-
-        <!-- LOGIN -->
-        <div class="box">
-            <h2>Log In</h2>
-
-            <form id="loginForm">
-
-                <label>Email</label>
-                <input type="email" id="loginEmail" required>
-
-                <label>Password</label>
-                <input type="password" id="loginPassword" required>
-
-                <button type="submit">Log In</button>
-
-            </form>
-
-            <p id="loginMessage"></p>
-        </div>
-
-    </div>
-
-
-    <script>
-
-        // SIGN UP
-        document.getElementById("signupForm").addEventListener("submit", async function(event) {
-
-            event.preventDefault();
-
-            const name = document.getElementById("signupName").value;
-            const email = document.getElementById("signupEmail").value;
-            const password = document.getElementById("signupPassword").value;
-
-            const response = await fetch("/signup", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    name: name,
-                    email: email,
-                    password: password
-                })
-            });
-
-            const result = await response.json();
-
-            document.getElementById("signupMessage").textContent =
-                result.message;
-
-            if (result.success) {
-                document.getElementById("signupForm").reset();
-            }
-        });
-
-
-        // LOGIN
-        document.getElementById("loginForm").addEventListener("submit", async function(event) {
-
-            event.preventDefault();
-
-            const email = document.getElementById("loginEmail").value;
-            const password = document.getElementById("loginPassword").value;
-
-            const response = await fetch("/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    email: email,
-                    password: password
-                })
-            });
-
-            const result = await response.json();
-
-            document.getElementById("loginMessage").textContent =
-                result.message;
-
-            if (result.success) {
-
-                localStorage.setItem("userName", result.name);
-
-                window.location.href = "dashboard.html";
-            }
-        });
-
-    </script>
+        <button type="submit">Login</button>
+    </form>
 
 </body>
 </html>

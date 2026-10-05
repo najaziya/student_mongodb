@@ -12,6 +12,18 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "express": "^5.2.1"
-  }
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^18.0.5",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "mongoose": "^9.10.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/najaziya/nodeLab.git"
+  },
+  "bugs": {
+    "url": "https://github.com/najaziya/nodeLab/issues"
+  },
+  "homepage": "https://github.com/najaziya/nodeLab#readme"
 }

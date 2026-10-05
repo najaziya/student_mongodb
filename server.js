@@ -1,129 +1,158 @@
 const express = require("express");
-const fs = require("fs");
-const EventEmitter = require("events");
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const session = require("express-session");
 const path = require("path");
+require("dotenv").config();
 
 const app = express();
-const PORT = 3000;
 
-// File paths
-const usersFile = path.join(__dirname, "users.json");
-const auditFile = path.join(__dirname, "audit.log");
 
 // Middleware
-app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use(session({
+    secret: "nodeLabSecret",
+    resave: false,
+    saveUninitialized: false
+}));
+
+
+// Serve HTML files
 app.use(express.static(path.join(__dirname, "public")));
 
-// Read users from users.json
-function readUsers() {
+
+// MongoDB connection
+mongoose
+    .connect("mongodb://127.0.0.1:27017/nodeLab") 
+    .then(() => {
+        console.log("MongoDB connected");
+    })
+    .catch((err) => {
+        console.log("MongoDB connection error:", err);
+    });
+
+
+// User Schema
+const userSchema = new mongoose.Schema({
+    name: String,
+    email: {
+        type: String,
+        unique: true
+    },
+    password: String
+});
+
+
+// User Model
+const User = mongoose.model("User", userSchema);
+
+
+// Signup
+app.post("/signup", async (req, res) => {
+
     try {
-        const data = fs.readFileSync(usersFile, "utf8");
-        return JSON.parse(data);
+
+        const { name, email, password } = req.body;
+
+        // Check existing user
+        const existingUser = await User.findOne({ email });
+
+        if (existingUser) {
+            return res.send("User already exists.");
+        }
+
+        // Encrypt password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create user
+        const newUser = new User({
+            name: name,
+            email: email,
+            password: hashedPassword
+        });
+
+        await newUser.save();
+
+        res.send(`
+            <h2>Signup successful!</h2>
+            <a href="/">Go to Login</a>
+        `);
+
     } catch (error) {
-        return [];
+
+        console.log(error);
+        res.send("Signup failed.");
+
     }
-}
-
-// Save users to users.json
-function saveUsers(users) {
-    fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
-}
-
-// Create custom EventEmitter
-const userEvents = new EventEmitter();
-
-// Signup event
-userEvents.on("signup", (user) => {
-    const message =
-        `${new Date().toLocaleString()} - New user registered: ${user.email}\n`;
-
-    fs.appendFileSync(auditFile, message);
-    console.log("Signup event logged");
 });
 
-// Login event
-userEvents.on("login", (user) => {
-    const message =
-        `${new Date().toLocaleString()} - User logged in: ${user.email}\n`;
 
-    fs.appendFileSync(auditFile, message);
-    console.log("Login event logged");
+// Login
+app.post("/login", async (req, res) => {
+
+    try {
+
+        const { email, password } = req.body;
+
+        // Find user
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.send("Invalid email or password.");
+        }
+
+        // Compare password
+        const passwordMatch = await bcrypt.compare(
+            password,
+            user.password
+        );
+
+        if (!passwordMatch) {
+            return res.send("Invalid email or password.");
+        }
+
+        // Create session
+        req.session.userId = user._id;
+        req.session.userName = user.name;
+
+        res.redirect("/dashboard");
+
+    } catch (error) {
+
+        console.log(error);
+        res.send("Login failed.");
+
+    }
 });
 
-// SIGN UP
-app.post("/signup", (req, res) => {
-    const { name, email, password } = req.body;
 
-    if (!name || !email || !password) {
-        return res.status(400).json({
-            success: false,
-            message: "Please fill in all fields."
-        });
+// Dashboard
+app.get("/dashboard", (req, res) => {
+
+    if (!req.session.userId) {
+        return res.redirect("/");
     }
 
-    const users = readUsers();
-
-    // Check if email already exists
-    const existingUser = users.find(
-        user => user.email.toLowerCase() === email.toLowerCase()
+    res.sendFile(
+        path.join(__dirname, "public", "dashboard.html")
     );
-
-    if (existingUser) {
-        return res.status(400).json({
-            success: false,
-            message: "Email already registered."
-        });
-    }
-
-    // Add new user
-    const newUser = {
-        name: name,
-        email: email,
-        password: password
-    };
-
-    users.push(newUser);
-    saveUsers(users);
-
-    // Emit signup event
-    userEvents.emit("signup", newUser);
-
-    res.json({
-        success: true,
-        message: "Registration successful!"
-    });
 });
 
-// LOGIN
-app.post("/login", (req, res) => {
-    const { email, password } = req.body;
 
-    const users = readUsers();
+// Logout
+app.get("/logout", (req, res) => {
 
-    const user = users.find(
-        user =>
-            user.email.toLowerCase() === email.toLowerCase() &&
-            user.password === password
-    );
-
-    if (!user) {
-        return res.status(401).json({
-            success: false,
-            message: "Invalid email or password."
-        });
-    }
-
-    // Emit login event
-    userEvents.emit("login", user);
-
-    res.json({
-        success: true,
-        message: "Login successful!",
-        name: user.name
+    req.session.destroy(() => {
+        res.redirect("/");
     });
+
 });
+
 
 // Start server
-app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+app.listen(3000, () => {
+
+    console.log("Server running at http://localhost:3000");
+
 });
